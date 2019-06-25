@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -35,16 +36,34 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Cache;
+import com.android.volley.Network;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.BasicNetwork;
+import com.android.volley.toolbox.DiskBasedCache;
+import com.android.volley.toolbox.HurlStack;
+import com.android.volley.toolbox.StringRequest;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public class SignupActivity extends AppCompatActivity  {
 
-    String URL= "http://localhost/crimereport/index.php";
+    private final String REGISTER_URL ="http://10.0.2.2/crimereport/registration.php";
+    private final String LOGIN_URL ="http://192.168.43.100/culture/login.php";
+    private String TAG_SUCCESS="success";
+
+
+    String URL= "http://localhost/crimereport/registration.php";
 
     JSONParser jsonParser=new JSONParser();
 
@@ -102,29 +121,31 @@ public class SignupActivity extends AppCompatActivity  {
                     EditText confpassword = findViewById(R.id.txtConfpassword);
 
 
-                    String Fnamestr = Fname.getText().toString();
-                    String Mnamestr = Mname.getText().toString();
-                    String Lnamestr = Lname.getText().toString();
-                    String phonenostr = phoneno.getText().toString();
-                    String passwordstr = password1.getText().toString();
-                    String confpasswordstr = confpassword.getText().toString();
+                    String FirstName = Fname.getText().toString();
+                    String MiddleName = Mname.getText().toString();
+                    String LastName = Lname.getText().toString();
+                    String PhoneNo = phoneno.getText().toString();
+                    String Password = password1.getText().toString();
+                    String Confpassword = confpassword.getText().toString();
                     String type = "signup";
 
-                    if (Fnamestr.equals("") | Mnamestr.equals("") | Lnamestr.equals("") | phonenostr.equals("") | passwordstr.equals("") | confpasswordstr.equals("")) {
+                    if (FirstName.equals("") | MiddleName.equals("") | LastName.equals("") | PhoneNo.equals("") | Password.equals("") | Confpassword.equals("")) {
 
                         Toast signupfields = Toast.makeText(SignupActivity.this, "Fill all the fields!", Toast.LENGTH_SHORT);
                         signupfields.show();
 
                     }
 
-                    if (!passwordstr.equals(confpasswordstr)) {
+                    if (!Password.equals(Confpassword)) {
 
                         Toast password = Toast.makeText(SignupActivity.this, "Password don't match", Toast.LENGTH_SHORT);
                         password.show();
                     } else {
                         //insert the details in database
-                        JSONParser attemptLogin= new JSONParser();
-                        attemptLogin.execute(type,Fnamestr,Mnamestr,Lnamestr,phonenostr,passwordstr);
+                        //JSONParser attemptLogin= new JSONParser();
+                       // attemptLogin.execute(type,FirstName,MiddleName,LastName,PhoneNo,Password,Confpassword);
+
+                        doRegister(FirstName, MiddleName, LastName, PhoneNo, Password, Confpassword);
 
 
 
@@ -157,23 +178,26 @@ public class SignupActivity extends AppCompatActivity  {
 
 
 
-            String Fname = args[0];
-            String Mname = args[1];
-            String Lname= args[2];
-            String phoneno= args[3];
-            String password= args[4];
+            String FirstName = args[0];
+            String MiddleName = args[1];
+            String LastName = args[2];
+            String PhoneNo= args[3];
+            String Password = args[4];
+            String Confpassword = args[5];
+
 
 
 
             ArrayList params = new ArrayList();
-            params.add(new BasicNameValuePair("Fname", Fname));
-            params.add(new BasicNameValuePair("Mname", Mname));
-            params.add(new BasicNameValuePair("Lname", Lname));
-            params.add(new BasicNameValuePair("phoneno", phoneno));
-            params.add(new BasicNameValuePair("password", password));
+            params.add(new BasicNameValuePair("FirstName", FirstName));
+            params.add(new BasicNameValuePair("MiddleName", MiddleName));
+            params.add(new BasicNameValuePair("LastName", LastName));
+            params.add(new BasicNameValuePair("PhoneNo", PhoneNo));
+            params.add(new BasicNameValuePair("Password", Password));
+            params.add(new BasicNameValuePair("Confpassword", Confpassword));
 
             JSONObject json = jsonParser.makeHttpRequest(URL, "POST", params);
-
+            Toast.makeText(getApplicationContext(), "sign up", Toast.LENGTH_LONG).show();
             return json;
 
         }
@@ -203,7 +227,158 @@ public class SignupActivity extends AppCompatActivity  {
 
     }
 
+    public void doRegister(final String firstName, final String middleName, final String lastName, final String mobileNo, final String password, final String confPassword){
+
+
+        RequestQueue mRequestQueue;
+
+// Instantiate the cache
+        Cache cache = new DiskBasedCache(this.getCacheDir(), 1024 * 1024); // 1MB cap
+
+// Set up the network to use HttpURLConnection as the HTTP client.
+        Network network = new BasicNetwork(new HurlStack());
+
+// Instantiate the RequestQueue with the cache and network.
+        mRequestQueue = new RequestQueue(cache, network);
+
+// Start the queue
+        mRequestQueue.start();
+
+        //change this IP 192.168.56.1 to your IP
+
+
+        //access online scripts,using this url you can even run to your mobile
+        //String url ="http://coict.alfadroid.com/BuyandSell/register.php";
+
+// Formulate the request and handle the response.
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, REGISTER_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        Log.i("Success", response);
+                        // Do something with the response
+                        try {
+                            JSONObject jsonObject = new JSONObject(response);
+                            Integer success=jsonObject.getInt(TAG_SUCCESS);
+                            if(success==1){
+                                //tumeregister freshi
+                                Toast.makeText(SignupActivity.this, "We've registered", Toast.LENGTH_LONG).show();
+                            }else{
+
+                                  //tumefeli
+                                Toast.makeText(SignupActivity.this, "Tumefeli", Toast.LENGTH_LONG).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Log.d("Error",e.toString());
+                        }
+
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Handle error
+                        Toast.makeText(SignupActivity.this,"Error " + error, Toast.LENGTH_SHORT).show();
+                    }
+                }){
+
+            @Override
+            protected Map<String ,String> getParams() throws AuthFailureError {
+
+                Map<String,String> params=new HashMap<String,String>();
+                params.put("FirstName",firstName);
+                params.put("MiddleName",middleName);
+                params.put("LastName",lastName);
+                params.put("PhoneNo",mobileNo);
+                params.put("Password",password);
+                params.put("Confpassword",password);
+
+
+                return params;
+            }};
+
+        //stringRequest.setShouldCache(false); //Use this line if dont want to save in cache
+// Add the request to the RequestQueue.
+        stringRequest.setShouldCache(false);
+        mRequestQueue.add(stringRequest);
 
     }
+
+    public void doLogin(final String username, final String password){
+
+        Log.i("DB.LOGIN","We get here");
+
+        RequestQueue mRequestQueue;
+
+// Instantiate the cache
+        Cache cache = new DiskBasedCache(this.getCacheDir(), 1024 * 1024); // 1MB cap
+
+// Set up the network to use HttpURLConnection as the HTTP client.
+        Network network = new BasicNetwork(new HurlStack());
+
+// Instantiate the RequestQueue with the cache and network.
+        mRequestQueue = new RequestQueue(cache, network);
+
+// Start the queue
+        mRequestQueue.start();
+
+        //change this IP 192.168.56.1 to your IP
+
+
+        //access online scripts,using this url you can even run to your mobile
+        //String url ="http://coict.alfadroid.com/BuyandSell/login.php";
+
+// Formulate the request and handle the response.
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, LOGIN_URL,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+
+                        // Do something with the response
+                        try {
+                            JSONObject jsonObject = new JSONObject(response);
+                            Integer success=jsonObject.getInt(TAG_SUCCESS);
+                            if(success==1){
+                                //tumelogin
+                            }else{
+
+                                //tumefeli
+
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            Log.d("Error",e.toString());
+                        }
+
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Handle error
+                        Toast.makeText(SignupActivity.this,"Error"+error,Toast.LENGTH_SHORT).show();
+                    }
+                }){
+
+            @Override
+            protected Map<String ,String> getParams() throws AuthFailureError {
+
+                Map<String,String> params=new HashMap<String,String>();
+                params.put("username",username);
+                params.put("password",password);
+
+                return params;
+            }};
+
+        //stringRequest.setShouldCache(false); //Use this line if dont want to save in cache
+// Add the request to the RequestQueue.
+        mRequestQueue.add(stringRequest);
+
+    }
+
+
+}
 
 
